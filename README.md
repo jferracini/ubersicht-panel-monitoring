@@ -19,8 +19,8 @@ All widgets draggable with snap, position persisted in `localStorage`.
 ## Install
 
 ```bash
-gh repo clone julioferracini/ubersicht-panel-monitoring ~/dev/ubersicht-panel-monitoring
-# or: git clone https://github.com/julioferracini/ubersicht-panel-monitoring.git ~/dev/ubersicht-panel-monitoring
+gh repo clone jferracini/ubersicht-panel-monitoring ~/dev/ubersicht-panel-monitoring
+# or: git clone https://github.com/jferracini/ubersicht-panel-monitoring.git ~/dev/ubersicht-panel-monitoring
 cd ~/dev/ubersicht-panel-monitoring
 ./install.sh
 ```
