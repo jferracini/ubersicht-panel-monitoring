@@ -6,10 +6,11 @@ PORTS=$(lsof -iTCP -sTCP:LISTEN -n -P 2>/dev/null \
   | awk 'NR>1 {
       split($9,a,":"); port=a[length(a)]+0
       cmd=$1; gsub(".*/","",cmd)
-      # Skip Ubersicht own ports, Adobe (15000-17000), system ranges
+      # Skip Ubersicht, Adobe, Logitech, macOS system services
       if (port>=1024 && port!=41416 && port!=41417 \
           && !(port>=15000 && port<=17000) \
-          && cmd!~/Adobe|Creative|CCX|lghub|Logi|Logi/) {
+          && !(port>=49152) \
+          && cmd!~/Adobe|Creative|CCX|lghub|Logi|Control|rapportd|airplay|AirPlay|sharingd/) {
         print port"|"cmd
       }
     }' \
