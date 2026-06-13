@@ -1,7 +1,7 @@
 // Vibe Code Utilities — dev tools mini-dashboard
 // Refresh every 5s. Drag to reposition. Position persisted in localStorage.
 
-import { run } from 'uebersicht';
+import { run, React } from 'uebersicht';
 
 export const refreshFrequency = 5000;
 
@@ -36,7 +36,17 @@ const __drag = (el) => {
   }
   if (!w || w.__dragInit_vc) return;
   w.__dragInit_vc = true;
-  try { const p = JSON.parse(localStorage.getItem(__dragKey)); if (p) { w.style.top=p.top+'px'; w.style.left=p.left+'px'; w.style.right='auto'; w.style.bottom='auto'; } } catch(e){}
+  try {
+    const p = JSON.parse(localStorage.getItem(__dragKey));
+    const winW = window.innerWidth, winH = window.innerHeight;
+    // Only restore if position is within screen bounds
+    if (p && p.top >= 0 && p.top < winH - 60 && p.left >= 0 && p.left < winW - 60) {
+      w.style.top=p.top+'px'; w.style.left=p.left+'px'; w.style.right='auto'; w.style.bottom='auto';
+    } else {
+      // Reset to CSS default (right:20px top:20px)
+      localStorage.removeItem(__dragKey);
+    }
+  } catch(e){}
   let drag=false, moved=false, ox=0, oy=0, sx=0, sy=0;
   w.addEventListener('mousedown', e => { drag=true; moved=false; const r=w.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; sx=e.clientX; sy=e.clientY; w.style.transition='none'; w.style.zIndex='9999'; });
   document.addEventListener('mousemove', e => {
