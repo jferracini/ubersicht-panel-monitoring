@@ -1,6 +1,6 @@
 # Übersicht Panel
 
-![Panel preview](docs/preview.png)
+![Panel preview](docs/preview.gif)
 
 System monitor for your Mac desktop — clock, battery, CPU, RAM, GPU, disk, and network in one panel.
 
