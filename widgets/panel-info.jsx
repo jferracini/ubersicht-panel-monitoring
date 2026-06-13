@@ -435,6 +435,22 @@ export const render = ({ output }) => {
           </div>
         </Cell>
       </div>
+      <div style={{
+        marginTop: 8,
+        textAlign: "right",
+        fontSize: 9,
+        opacity: 0.3,
+        letterSpacing: 0.3,
+        fontWeight: 400,
+      }}>
+        by Julio Ferracini &nbsp;·&nbsp;{" "}
+        <span
+          style={{ cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(255,255,255,0.3)" }}
+          onClick={() => run("open https://github.com/jferracini/ubersicht-panel-monitoring")}
+        >
+          github.com/jferracini/ubersicht-panel-monitoring
+        </span>
+      </div>
     </div>
   );
 };
