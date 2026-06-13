@@ -2,139 +2,107 @@
 
 ![Panel preview](docs/preview.png)
 
-System dashboard for macOS Apple Silicon — a single 2×4 grid widget that consolidates clock, stay-awake toggle, battery, GPU, disk, memory, CPU, and network into one draggable panel. Each metric is also available as a standalone widget if you prefer to spread them across the desktop.
+System monitor for your Mac desktop — clock, battery, CPU, RAM, GPU, disk, and network in one panel.
 
-## Features
-
-| Cell | Live data | Click action |
-|------|-----------|--------------|
-| **Clock** | Day · HH:MM:SS · date | — |
-| **Stay Awake** | `caffeinate -dimsu` toggle (ON ☕ / OFF 💤) | click cell to toggle |
-| **Battery** | % · charging · time remaining | — |
-| **GPU** | Util % (Apple Silicon delta-sampled) + VRAM bar | — |
-| **Disk** | Used · purgeable bar · totals | `CLR` thins Time Machine local snapshots |
-| **Memory** | % · top hog · used/total | `PRG` runs `sudo purge` (admin prompt) |
-| **CPU** | % · top process | — |
-| **Network** | ↓ down + ↑ up KB/s · local IP | aggregates `en*` + `utun*` (VPN) |
-
-All widgets draggable, snap to edges/center/neighbours, position persisted in `localStorage`.
-
-## Requirements
-
-- macOS 13+ on Apple Silicon (M1/M2/M3/M4)
-- [Übersicht.app](https://tracesof.net/uebersicht/) — desktop widget engine
-- Xcode Command Line Tools — for the Swift disk helper (`xcode-select --install`)
-- Git + [`gh` CLI](https://cli.github.com/) (only for the clone-via-gh option)
+> **Requires an Apple Silicon Mac** (M1 / M2 / M3 / M4) running macOS 13 or later.
 
 ---
 
-## Install — step by step
+## Install
 
-### 1. Install Übersicht
+### Step 1 — Download Übersicht
 
-```bash
-brew install --cask ubersicht
-```
+Übersicht is the app that makes desktop widgets possible.
 
-Or download the `.app` from <https://tracesof.net/uebersicht/> and drag into `/Applications/`.
+👉 Go to **https://tracesof.net/uebersicht/**  
+Download the app and drag it into your **Applications** folder.
 
-Launch it once so it creates `~/Library/Application Support/Übersicht/widgets/`.
+---
 
-### 2. Install Xcode CLT (if not present)
+### Step 2 — Download this project
 
-```bash
-xcode-select -p >/dev/null 2>&1 || xcode-select --install
-```
+Click the green **Code** button on this GitHub page → **Download ZIP**  
+Unzip the file. You'll get a folder called `ubersicht-panel-monitoring`.
 
-A GUI prompt may appear — accept and wait for it to finish before continuing.
+Move it somewhere permanent — your **home folder** or **Documents** work well.  
+*(Don't leave it in Downloads — the panel will break if you move or delete the folder later.)*
 
-### 3. Clone this repo
+---
 
-```bash
-gh repo clone jferracini/ubersicht-panel-monitoring ~/dev/ubersicht-panel-monitoring
-# or, without gh:
-# git clone https://github.com/jferracini/ubersicht-panel-monitoring.git ~/dev/ubersicht-panel-monitoring
-```
+### Step 3 — Run the installer
 
-### 4. Run the installer
+Open **Terminal**:  
+Press `⌘ Space` → type `Terminal` → press Enter
 
-```bash
-cd ~/dev/ubersicht-panel-monitoring
-chmod +x install.sh uninstall.sh
-./install.sh
-```
+Drag the file **`install.sh`** from the project folder into the Terminal window.  
+Press **Enter**.
 
-The installer:
-- symlinks each `.jsx` and `.swift` from `widgets/` into `~/Library/Application Support/Übersicht/widgets/`
-- backs up any existing widget with the same name to `<name>.bak.<timestamp>`
-- launches Übersicht
+The installer will automatically:
+- Install Übersicht if it's not already installed
+- Set up all widgets
+- Show only the main panel (individual widgets are hidden by default)
+- Open Übersicht
 
-Symlinks mean future `git pull` updates apply live — no copy step.
+---
 
-### 5. Grant permissions (first run only)
+### Step 4 — Allow Screen Recording (one-time only)
 
-Übersicht needs:
-- **Screen Recording** — to render on the desktop. macOS will prompt; allow it in *System Settings → Privacy & Security → Screen Recording*, then quit and relaunch Übersicht.
-- **Automation** — the RAM Purge button uses `osascript` with admin privileges. It will prompt the first time it runs.
+macOS requires you to grant permission before Übersicht can draw on your desktop.
 
-If a widget renders blank, open Übersicht menubar → **Open Log** to inspect errors.
+The installer will open **System Settings → Screen Recording** automatically.
 
-### 6. Arrange the panel
+Übersicht won't appear in the list on its own — you need to add it:
 
-- Drag the consolidated panel anywhere — it snaps to edges, screen center, and other widgets.
-- Position persists across reboots (stored in browser `localStorage`).
-- The 7 standalone widgets are also installed. Disable any you don't want via the Übersicht menubar → **Widgets** → uncheck.
+1. Click the **+** button at the bottom of the list
+2. Navigate to **Applications**
+3. Select **Übersicht.app** → click **Open**
+4. Toggle **Übersicht ON**
+5. Go back to Terminal and press **Enter**
+
+The panel will appear on your desktop. ✓
+
+> This step only happens once. Running the installer again in the future won't ask for it.
+
+---
+
+## Using the panel
+
+| Cell | What it shows | Tap to… |
+|------|--------------|---------|
+| **Clock** | Day, time, date | — |
+| **Stay Awake** | Whether your Mac can sleep | Toggle sleep on/off |
+| **Battery** | Charge %, status, time left | — |
+| **GPU** | Usage % and VRAM | — |
+| **Disk** | Space used, purgeable | **CLR** — free up purgeable space |
+| **Memory** | RAM used, top app | **PRG** — clear inactive RAM |
+| **CPU** | Usage %, top process | — |
+| **Network** | Download/upload speed, IP | — |
+
+**Drag** the panel anywhere on your desktop — its position is saved automatically and restored after restart.
+
+---
+
+## Manage widgets
+
+Click the **Übersicht icon** in your menu bar to show or hide individual widgets.  
+By default only the main panel is visible. The 7 individual widgets (clock, battery, etc.) are hidden and can be enabled there if you want them separately.
 
 ---
 
 ## Update
 
-```bash
-cd ~/dev/ubersicht-panel-monitoring
-git pull
-```
-
-Übersicht watches the widgets directory and auto-reloads on file change. No restart needed.
-
-## Uninstall
-
-```bash
-cd ~/dev/ubersicht-panel-monitoring
-./uninstall.sh
-```
-
-Removes only the symlinks created by `install.sh`. The repo and Übersicht itself stay.
+Open Terminal, drag `install.sh` into it, press Enter.  
+That's it — the installer is safe to run multiple times.
 
 ---
 
-## Files
+## Uninstall
 
-```
-widgets/
-├── panel-info.jsx        # consolidated 2×4 dashboard (the hero)
-├── clock.jsx
-├── stay-awake.jsx
-├── battery-info.jsx
-├── disk-info.jsx
-├── disk-info.swift       # uses volumeAvailableCapacityForImportantUsage (matches Finder)
-├── gpu-info.jsx
-├── ram-info.jsx
-└── cpu-info.jsx
-docs/
-└── preview.png
-install.sh
-uninstall.sh
-```
+Open Terminal, drag `uninstall.sh` into it, press Enter.  
+This removes the widgets from your desktop. Übersicht stays installed.
 
-## Implementation notes
-
-- **Stay Awake** spawns `nohup caffeinate -dimsu & disown` — survives terminal close, dies on reboot (intentional, prevents leaving it on forever).
-- **Disk Clear** runs `tmutil thinlocalsnapshots / 999999999999 4` — no sudo needed.
-- **RAM Purge** runs `sudo purge` via `osascript -e 'do shell script ... with administrator privileges'`.
-- **Network** aggregates all `en[0-9]+` (physical) and `utun[0-9]+` (VPN tunnels — Palo Alto GlobalProtect, Wireguard, etc.). Excludes `Link` rows. Delta-sampled over a 500 ms window.
-- **GPU** uses cumulative `busy_ms` delta from `ioreg PerformanceStatistics` over 500 ms — Apple Silicon reports `Device Utilization %` as 0 when the GPU sleeps deeply, so the instant value is misleading.
-- **Refresh** = 3 s for the combined panel, individual widgets keep their original rates (1–30 s).
+---
 
 ## License
 
-MIT. Do whatever.
+MIT — do whatever you want.
