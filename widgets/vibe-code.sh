@@ -5,16 +5,16 @@
 PORTS=$(lsof -iTCP -sTCP:LISTEN -n -P 2>/dev/null \
   | awk 'NR>1 {
       split($9,a,":"); port=a[length(a)]+0
-      cmd=$1; gsub(".*/","",cmd)
+      cmd=$1; gsub(".*/","",cmd); pid=$2
       # Skip Ubersicht, Adobe, Logitech, macOS system services
       if (port>=1024 && port!=41416 && port!=41417 \
           && !(port>=15000 && port<=17000) \
           && !(port>=49152) \
           && cmd!~/Adobe|Creative|CCX|lghub|Logi|Control|rapportd|airplay|AirPlay|sharingd/) {
-        print port"|"cmd
+        print port"|"cmd"|"pid
       }
     }' \
-  | sort -t"|" -k1,1n | uniq | head -8 \
+  | sort -t"|" -k1,1n -u | head -8 \
   | paste -sd ";" -)
 
 # ---- AI / Coding Processes ----
@@ -36,7 +36,9 @@ for base in ~/Sites ~/dev ~/Developer ~/Code ~/Projects ~/workspace; do
     changes=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
     mtime=$(stat -f '%m' "${repo}.git" 2>/dev/null || echo 0)
     name=$(basename "$repo")
-    GIT="${GIT}${mtime}~${name}|${branch}|${changes};"
+    # strip trailing slash for clean path
+    path="${repo%/}"
+    GIT="${GIT}${mtime}~${name}|${branch}|${changes}|${path};"
   done
 done
 GIT=$(printf "%s" "$GIT" | tr ';' '\n' | grep -v '^$' \

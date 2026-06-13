@@ -47,10 +47,15 @@ do_copy() {
 
 do_quit() {
   osascript -e 'tell application "Übersicht" to quit' 2>/dev/null || true
-  sleep 1
+  sleep 2
   pgrep -f "Übersicht.app/Contents" | xargs kill -9 2>/dev/null || true
   pgrep -f "Uebersicht" | xargs kill -9 2>/dev/null || true
-  sleep 1
+  sleep 2
+  # wait for port 41416 to free up (server.js zombie)
+  for i in 1 2 3 4 5; do
+    lsof -iTCP:41416 -sTCP:LISTEN -P 2>/dev/null | grep -q . || break
+    sleep 1
+  done
 }
 
 do_launch() {
@@ -101,11 +106,15 @@ if [ "$MODE_RESTART" = "1" ] || [ "$MODE_PULL" = "1" ]; then
   echo "🔄 restarting Übersicht…"
   do_quit
   do_launch
-  sleep 2
-  if pgrep -f "Übersicht.app/Contents/MacOS" >/dev/null; then
-    echo "  ✓ running"
+  # wait for server.js to fully initialize (not just app shell)
+  for i in 1 2 3 4 5 6 7 8; do
+    sleep 1
+    if pgrep -f "server.js" >/dev/null; then break; fi
+  done
+  if pgrep -f "server.js" >/dev/null; then
+    echo "  ✓ running (app + server)"
   else
-    echo "  ⚠ not detected — open manually"
+    echo "  ⚠ server.js not detected — relaunch app manually"
   fi
 else
   echo "🔄 soft refresh widgets…"

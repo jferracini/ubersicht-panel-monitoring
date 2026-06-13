@@ -62,6 +62,32 @@ const __drag = (el) => {
   });
 };
 
+// ---- click actions (skip if widget was just dragged) ----
+const __clickGuard = (el, fn) => (e) => {
+  let w = el?.parentElement;
+  while (w && w !== document.body) {
+    if (['absolute','fixed'].includes(window.getComputedStyle(w).position)) break;
+    w = w.parentElement;
+  }
+  if (w?.__vcMoved) { w.__vcMoved = false; return; }
+  e.stopPropagation();
+  fn(e);
+};
+const openURL = (url) => run(`open ${JSON.stringify(url)}`);
+const openInCursor = (path) => run(`open -a Cursor ${JSON.stringify(path)} 2>/dev/null || open -a "Visual Studio Code" ${JSON.stringify(path)}`);
+const openInTerminal = (cmd) => run(`osascript -e 'tell application "Terminal" to do script "${cmd.replace(/"/g,'\\"')}"' -e 'tell application "Terminal" to activate'`);
+const activateApp = (name) => run(`osascript -e 'tell application "${name}" to activate' 2>/dev/null`);
+const killPid = (pid) => run(`kill -9 ${pid} 2>/dev/null`);
+const dockerRestart = (name) => run(`docker restart ${JSON.stringify(name)} 2>/dev/null`);
+
+// ---- AI app name normalizer (process name → app name for activate) ----
+const AI_APP = { cursor:'Cursor', zed:'Zed', windsurf:'Windsurf', copilot:'GitHub Copilot' };
+const aiAppFor = (proc) => {
+  const k = proc.toLowerCase();
+  for (const key in AI_APP) if (k.includes(key)) return AI_APP[key];
+  return null;
+};
+
 // ---- Port → label ----
 const PORT_LABEL = {
   3000:'Next/React', 3001:'React', 3002:'React', 3003:'React',
@@ -108,8 +134,8 @@ export const render = ({ output }) => {
 
   // Ports
   const ports = rawPorts ? rawPorts.split(';').filter(Boolean).map(r => {
-    const [port, proc] = r.split('|');
-    return { port: parseInt(port), proc: proc?.trim() || '?' };
+    const [port, proc, pid] = r.split('|');
+    return { port: parseInt(port), proc: proc?.trim() || '?', pid: parseInt(pid) || 0 };
   }) : [];
 
   // AI Processes
@@ -120,8 +146,8 @@ export const render = ({ output }) => {
 
   // Git
   const gitRepos = rawGit ? rawGit.split(';').filter(Boolean).map(r => {
-    const [name, branch, changes] = r.split('|');
-    return { name: name?.trim()||'?', branch: branch?.trim()||'?', changes: parseInt(changes)||0 };
+    const [name, branch, changes, path] = r.split('|');
+    return { name: name?.trim()||'?', branch: branch?.trim()||'?', changes: parseInt(changes)||0, path: path?.trim()||'' };
   }) : [];
 
   // Docker
@@ -151,14 +177,20 @@ export const render = ({ output }) => {
       {ports.length === 0 && (
         <div style={{ opacity:0.3, fontSize:10, marginBottom:2 }}>No dev servers running</div>
       )}
-      {ports.map(({ port, proc }) => (
+      {ports.map(({ port, proc, pid }) => (
         <Row key={port}>
-          <span style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span
+            ref={(el) => el && (el.__vc = el)}
+            onClick={(e) => __clickGuard(e.currentTarget, () => openURL(`http://localhost:${port}`))(e)}
+            title={`Click: open http://localhost:${port}`}
+            style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', flex:1 }}
+          >
             <span style={{ color:'#5ac8fa', fontWeight:600, fontVariantNumeric:'tabular-nums' }}>:{port}</span>
             <span style={{ opacity:0.55 }}>{PORT_LABEL[port] || proc}</span>
           </span>
           <span
-            onClick={() => run(`lsof -ti:${port} | xargs kill -9 2>/dev/null`)}
+            onClick={(e) => __clickGuard(e.currentTarget, () => pid ? killPid(pid) : run(`lsof -ti:${port} | xargs kill -9 2>/dev/null`))(e)}
+            title={`Kill PID ${pid || '?'}`}
             style={{
               fontSize:8, padding:'1px 5px', borderRadius:3, cursor:'pointer',
               color:'#ff453a', background:'rgba(255,69,58,0.12)', border:'1px solid rgba(255,69,58,0.3)',
@@ -175,15 +207,22 @@ export const render = ({ output }) => {
       {aiProcs.length === 0 && (
         <div style={{ opacity:0.3, fontSize:10, marginBottom:2 }}>No AI tools detected</div>
       )}
-      {aiProcs.map(({ cpu, mem, name }, i) => (
-        <Row key={i}>
-          <span style={{ opacity:0.8, fontWeight:500 }}>{name}</span>
-          <span style={{ display:'flex', gap:6 }}>
-            <Tag color={cpu > 20 ? '#ff9500' : '#34c759'}>{cpu.toFixed(1)}% CPU</Tag>
-            <Tag color="#5ac8fa">{mem.toFixed(1)}% MEM</Tag>
-          </span>
-        </Row>
-      ))}
+      {aiProcs.map(({ cpu, mem, name }, i) => {
+        const app = aiAppFor(name);
+        return (
+          <Row key={i}>
+            <span
+              onClick={app ? (e) => __clickGuard(e.currentTarget, () => activateApp(app))(e) : undefined}
+              title={app ? `Activate ${app}` : null}
+              style={{ opacity:0.8, fontWeight:500, cursor: app ? 'pointer' : 'default' }}
+            >{name}</span>
+            <span style={{ display:'flex', gap:6 }}>
+              <Tag color={cpu > 20 ? '#ff9500' : '#34c759'}>{cpu.toFixed(1)}% CPU</Tag>
+              <Tag color="#5ac8fa">{mem.toFixed(1)}% MEM</Tag>
+            </span>
+          </Row>
+        );
+      })}
 
       <Divider />
 
@@ -192,9 +231,15 @@ export const render = ({ output }) => {
       {gitRepos.length === 0 && (
         <div style={{ opacity:0.3, fontSize:10, marginBottom:2 }}>No repos found in ~/Sites ~/dev</div>
       )}
-      {gitRepos.map(({ name, branch, changes }, i) => (
+      {gitRepos.map(({ name, branch, changes, path }, i) => (
         <Row key={i}>
-          <span style={{ display:'flex', alignItems:'center', gap:6, minWidth:0 }}>
+          <span
+            onClick={(e) => __clickGuard(e.currentTarget, () =>
+              e.shiftKey ? openInTerminal(`cd ${path} && git status`) : openInCursor(path)
+            )(e)}
+            title={path ? `Click: open in Cursor · Shift+click: Terminal\n${path}` : null}
+            style={{ display:'flex', alignItems:'center', gap:6, minWidth:0, cursor: path ? 'pointer' : 'default', flex:1 }}
+          >
             <span style={{ opacity:0.8, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:130 }}>{name}</span>
             <span style={{ color:'#bf5af2', fontSize:10, opacity:0.8 }}>{branch}</span>
           </span>
@@ -215,7 +260,13 @@ export const render = ({ output }) => {
           )}
           {containers.map(({ name, status }, i) => (
             <Row key={i}>
-              <span style={{ opacity:0.8 }}>{name}</span>
+              <span
+                onClick={(e) => __clickGuard(e.currentTarget, () =>
+                  e.shiftKey ? dockerRestart(name) : openInTerminal(`docker logs -f ${name}`)
+                )(e)}
+                title={`Click: docker logs -f · Shift+click: docker restart`}
+                style={{ opacity:0.8, cursor:'pointer', flex:1 }}
+              >{name}</span>
               <span style={{ opacity:0.45, fontSize:10 }}>{status.replace(/^Up /,'↑ ')}</span>
             </Row>
           ))}
