@@ -91,6 +91,23 @@ By default only the main panel is visible. The 7 individual widgets (clock, batt
 cd ~/ubersicht-panel-monitoring && git pull && ./install.sh
 ```
 
+Übersicht detects file changes automatically — widgets reload without restart.
+
+---
+
+## Vibe Code Utilities
+
+A second panel for developers — enable it from the Übersicht menu bar.
+
+| Section | What it shows |
+|---------|--------------|
+| **Dev Ports** | Active dev servers (Vite, Next, Ollama, bun…) with one-click **KILL** |
+| **AI Processes** | Running AI tools (Claude, Cursor, Copilot, Ollama…) with CPU/RAM |
+| **Git Repos** | Branch + change count for repos in `~/Sites`, `~/dev`, `~/Developer` |
+| **Docker** | Running containers (shown only if Docker is installed) |
+
+To enable: click the **Übersicht icon** in the menu bar → `vibe-code-jsx` → enable.
+
 ---
 
 ## Uninstall
