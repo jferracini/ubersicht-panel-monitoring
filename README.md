@@ -19,26 +19,22 @@ Download the app and drag it into your **Applications** folder.
 
 ---
 
-### Step 2 — Download this project
+### Step 2 — Clone and install
 
-Click the green **Code** button on this GitHub page → **Download ZIP**  
-Unzip the file. You'll get a folder called `ubersicht-panel-monitoring`.
+Open **Terminal** → press `⌘ Space`, type `Terminal`, press Enter.
 
-Move it somewhere permanent — your **home folder** or **Documents** work well.  
-*(Don't leave it in Downloads — the panel will break if you move or delete the folder later.)*
+Paste these two commands, pressing Enter after each:
 
----
+```bash
+git clone https://github.com/jferracini/ubersicht-panel-monitoring.git ~/ubersicht-panel-monitoring
+```
 
-### Step 3 — Run the installer
-
-Open **Terminal**:  
-Press `⌘ Space` → type `Terminal` → press Enter
-
-Drag the file **`install.sh`** from the project folder into the Terminal window.  
-Press **Enter**.
+```bash
+~/ubersicht-panel-monitoring/install.sh
+```
 
 The installer will automatically:
-- Install Übersicht if it's not already installed
+- Install Übersicht if it's not already on your Mac
 - Set up all widgets
 - Show only the main panel (individual widgets are hidden by default)
 - Open Übersicht
@@ -91,14 +87,18 @@ By default only the main panel is visible. The 7 individual widgets (clock, batt
 
 ## Update
 
-Open Terminal, drag `install.sh` into it, press Enter.  
-That's it — the installer is safe to run multiple times.
+```bash
+cd ~/ubersicht-panel-monitoring && git pull && ./install.sh
+```
 
 ---
 
 ## Uninstall
 
-Open Terminal, drag `uninstall.sh` into it, press Enter.  
+```bash
+~/ubersicht-panel-monitoring/uninstall.sh
+```
+
 This removes the widgets from your desktop. Übersicht stays installed.
 
 ---
