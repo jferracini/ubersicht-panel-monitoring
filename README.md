@@ -1,4 +1,4 @@
-# Übersicht Panel
+# Übersicht Panel Monitoring
 
 ![Panel preview](docs/preview.gif)
 
