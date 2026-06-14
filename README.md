@@ -110,6 +110,25 @@ To enable: click the **Übersicht icon** in the menu bar → `vibe-code-jsx` →
 
 ---
 
+## Vibe Actions
+
+A 3x2 quick-actions grid, geared toward design + vibe-coding workflows.
+
+| Action | What it does |
+|--------|--------------|
+| **Record** | Pick a screen area, record a demo clip (`.mov`), saved to `/tmp`, path copied to clipboard |
+| **Kill dev** | Force-kills processes on common dev ports (3000, 5173, 8080…) |
+| **Responsive** | Opens `localhost:3000` in 3 Chrome windows (mobile/tablet/desktop sizes) |
+| **Region** | macOS region screenshot → PNG to `/tmp`, path copied to clipboard |
+| **Open in Cursor** | Folder picker → opens selection in Cursor (falls back to VS Code) |
+| **Claude Code** | Opens Terminal and runs `claude` (or installs it if missing) |
+
+Click **? help** in the panel footer for an in-app explanation of each action.
+
+To enable: click the **Übersicht icon** in the menu bar → `vibe-actions-jsx` → enable.
+
+---
+
 ## Uninstall
 
 ```bash
