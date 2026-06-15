@@ -91,9 +91,7 @@ export const className = `
   left: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   color: #fff;
-  background: rgba(20, 20, 24, 0.78);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(135deg, rgba(22, 22, 28, 0.86) 0%, rgba(30, 22, 38, 0.80) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 14px;
