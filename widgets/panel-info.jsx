@@ -1,5 +1,5 @@
 // Panel Info — 2x4 grid combining clock, stay-awake, battery, gpu, disk, ram, cpu, net
-// Refresh every 3s. Stay-awake / Disk Clear / RAM Purge clickable. Drag to reposition.
+// Refresh every 3s. Stay-awake toggle, Disk CLR cleanup menu, RAM PRG purge. Drag to reposition.
 //
 // Coexists with the 7 individual widgets — disable them in Übersicht menu if desired.
 
