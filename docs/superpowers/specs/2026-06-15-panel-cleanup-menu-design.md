@@ -51,9 +51,11 @@ The new value is the bottom four rows. Everything else stays untouched.
 
 ### Trigger
 
-The `CLR` chip on the Disk tile keeps rendering only when `hasPurgeable` is
-true. Its `onAction` changes from "run thinlocalsnapshots directly" to "toggle
-the cleanup popup".
+The `CLR` chip on the Disk tile renders **always** (cache / Ollama / Downloads /
+Trash cleanup is always relevant, not only when APFS snapshots exist). Its
+`onAction` changes from "run thinlocalsnapshots directly" to "toggle the cleanup
+popup". Only the **Snapshots** row inside the menu is gated on `hasPurgeable` —
+it is hidden (or shown disabled) when there is nothing to thin.
 
 ### Popup mechanism
 
