@@ -7,12 +7,14 @@
 set -uo pipefail
 
 notify() {
-  osascript -e "display notification \"$1\" with title \"Disk\" sound name \"Pop\"" >/dev/null 2>&1
+  local msg=${1//\"/\'}
+  osascript -e "display notification \"$msg\" with title \"Disk\" sound name \"Pop\"" >/dev/null 2>&1
 }
 
 # Returns 0 only if the user clicks the non-default "Limpar" button.
 confirm() {
-  osascript -e "display dialog \"$1\" buttons {\"Cancelar\",\"Limpar\"} default button \"Cancelar\"" >/dev/null 2>&1
+  local msg=${1//\"/\'}
+  osascript -e "display dialog \"$msg\" buttons {\"Cancelar\",\"Limpar\"} default button \"Cancelar\"" >/dev/null 2>&1
 }
 
 human_size() { du -shc "$@" 2>/dev/null | tail -1 | awk '{print $1}'; }
@@ -36,7 +38,7 @@ case "${1:-}" in
     if [ -z "$LIST" ]; then
       notify "Nenhum modelo Ollama"; exit 0
     fi
-    AS_LIST=$(echo "$LIST" | awk '{printf "\"%s\",", $0}' | sed 's/,$//')
+    AS_LIST=$(printf '%s\n' "$LIST" | awk '{gsub(/"/,"",$0); printf "\"%s\",", $0}' | sed 's/,$//')
     CHOICE=$(osascript -e "choose from list {$AS_LIST} with prompt \"Remover qual modelo Ollama?\"" 2>/dev/null)
     if [ "$CHOICE" = "false" ] || [ -z "$CHOICE" ]; then
       exit 0
