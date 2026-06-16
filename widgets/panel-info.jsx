@@ -150,6 +150,7 @@ const __dragRef_panel = (el) => {
   if (!w) return;
   if (w.__dragInit_panel) return;
   w.__dragInit_panel = true;
+  w.style.overflow = 'visible';
   try {
     const saved = localStorage.getItem(__dragKey_panel);
     if (saved) {
@@ -252,11 +253,6 @@ const purgeRam = (e) => {
   run(`osascript -e 'do shell script "purge" with administrator privileges' && osascript -e 'display notification "Inactive memory purged" with title "Memory" sound name "Pop"'`);
 };
 
-const clearPurgeable = (e) => {
-  e.stopPropagation();
-  run(`tmutil thinlocalsnapshots / 999999999999 4 && osascript -e 'display notification "Purgeable cleared" with title "Disk" sound name "Pop"'`);
-};
-
 // ---- cleanup menu ----
 const CLEAN_SH = `bash "$HOME/Library/Application Support/Übersicht/widgets/panel-cleanup.sh"`;
 const runCleanup = (action) => run(`${CLEAN_SH} ${action}`);
@@ -290,6 +286,7 @@ const CleanRow = ({ label, hint, action, danger }) => (
       display: "flex", justifyContent: "space-between", alignItems: "center",
       gap: 12, padding: "6px 10px", borderRadius: 6, cursor: "pointer",
       fontSize: 11, whiteSpace: "nowrap", color: danger ? "#ff6b6b" : "#fff",
+      borderTop: danger ? "1px solid rgba(255,255,255,0.08)" : "none", marginTop: danger ? 2 : 0,
     }}
   >
     <span>{label}</span>
@@ -453,7 +450,7 @@ export const render = ({ output }) => {
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 8,
               boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-              zIndex: 20,
+              zIndex: 99999,
             }}
           >
             <div style={{ fontSize: 9, opacity: 0.4, textTransform: "uppercase", letterSpacing: 0.5, padding: "4px 10px 2px" }}>
