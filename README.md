@@ -69,12 +69,39 @@ The panel will appear on your desktop. ✓
 | **Stay Awake** | Whether your Mac can sleep | Toggle sleep on/off |
 | **Battery** | Charge %, status, time left | — |
 | **GPU** | Usage % and VRAM | — |
-| **Disk** | Space used, purgeable | **CLR** — free up purgeable space |
-| **Memory** | RAM used, top app | **PRG** — clear inactive RAM |
+| **Disk** | Space used, purgeable | **CLR** — cleanup menu (see below) |
+| **Memory** | Memory pressure, RAM used, swap, top app | **MEM** — memory menu (see below) |
 | **CPU** | Usage %, top process | — |
 | **Network** | Download/upload speed, IP | — |
 
 **Drag** the panel anywhere on your desktop — its position is saved automatically and restored after restart.
+
+---
+
+## Disk cleanup (CLR menu)
+
+Tap **CLR** on the Disk cell to open a cleanup menu. Each action reports how much space it actually freed.
+
+| Option | What it clears |
+|--------|---------------|
+| **Snapshots APFS** | Local Time Machine snapshots (shown when there's purgeable space) |
+| **Caches de apps** | Safe, regenerable caches of the heaviest apps (Chrome, Cursor, Claude, Atlas). Never touches logins, passwords, open tabs, settings or files |
+| **Modelos Ollama** | Pick an Ollama model to remove |
+| **Downloads (maiores)** | Lists the biggest files in Downloads so you choose what to delete |
+| **Esvaziar Lixeira** | Empties the Trash |
+
+---
+
+## Memory (MEM menu)
+
+The Memory cell shows the **memory pressure** (Normal / Atenção / Crítico) — the health signal macOS actually uses — plus **swap in use**, which is the real warning sign on modern Macs. The bar is colored by pressure, not by raw "% used".
+
+Tap **MEM** to open the memory menu:
+
+| Option | What it does |
+|--------|--------------|
+| **Apps que mais usam memória** | Lists running apps grouped by app (all helper processes summed), biggest first. Pick one to quit it gracefully — the only thing that truly relieves memory pressure |
+| **Purge (efeito limitado)** | Runs macOS `purge` (asks for admin) and honestly reports how little it freed |
 
 ---
 

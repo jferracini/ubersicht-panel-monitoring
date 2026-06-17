@@ -1,5 +1,5 @@
 // Panel Info — 2x4 grid combining clock, stay-awake, battery, gpu, disk, ram, cpu, net
-// Refresh every 3s. Stay-awake toggle, Disk CLR cleanup menu, RAM PRG purge. Drag to reposition.
+// Refresh every 3s. Stay-awake toggle, Disk CLR cleanup menu, Memory MEM menu (pressure/swap + top apps). Drag to reposition.
 //
 // Coexists with the 7 individual widgets — disable them in Übersicht menu if desired.
 
@@ -35,6 +35,11 @@ export const command = `
   ram_used=$(echo "scale=1; $ram_total - $ram_free" | bc)
   ram_pct=$(echo "scale=0; $ram_used * 100 / $ram_total" | bc)
   ram_hog=$(ps -axo rss,comm | sort -rn | head -1 | awk '{full=""; for(i=2;i<=NF;i++) full = full (i>2?" ":"") $i; n=split(full, p, "/"); name=p[n]; if(length(name)>16) name=substr(name,1,16)"…"; printf "%s", name}')
+  # memory pressure level (1=normal 2=warning 4=critical) + swap used (the metrics that actually matter on modern macOS)
+  mem_press=$(sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null)
+  mem_press=\${mem_press:-1}
+  swap_gb=$(sysctl -n vm.swapusage 2>/dev/null | awk '{for(i=1;i<=NF;i++){if($i=="used"){val=$(i+2); u=substr(val,length(val),1); n=val+0; if(u=="M")n=n/1024; else if(u=="K")n=n/1048576; printf "%.1f", n}}}')
+  swap_gb=\${swap_gb:-0}
 
   # ---- cpu ----
   CPU_LINE=$(top -l 2 -n 0 -s 1 2>/dev/null | grep "CPU usage" | tail -1)
@@ -81,7 +86,7 @@ export const command = `
   [ $up_kbps -lt 0 ] && up_kbps=0
   net_ip=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "—")
 
-  echo "$hour|$minute|$second|$day_name|$date_full##$caf_pid##$bat_pct|$bat_state|$bat_time##$gpu_util|$vram_used_mb|$vram_alloc_mb##$DISK_OUT##$ram_total|$ram_used|$ram_free|$ram_pct|$ram_hog##$cpu_total|$cpu_hog##$down_kbps|$up_kbps|$net_ip"
+  echo "$hour|$minute|$second|$day_name|$date_full##$caf_pid##$bat_pct|$bat_state|$bat_time##$gpu_util|$vram_used_mb|$vram_alloc_mb##$DISK_OUT##$ram_total|$ram_used|$ram_free|$ram_pct|$ram_hog|$mem_press|$swap_gb##$cpu_total|$cpu_hog##$down_kbps|$up_kbps|$net_ip"
 `;
 
 export const refreshFrequency = 3000;
@@ -246,10 +251,35 @@ const toggleStay = (isOn) => (e) => {
   else run(`nohup caffeinate -dimsu > /dev/null 2>&1 & disown`);
 };
 
-const purgeRam = (e) => {
-  e.stopPropagation();
-  run(`osascript -e 'do shell script "purge" with administrator privileges' && osascript -e 'display notification "Inactive memory purged" with title "Memory" sound name "Pop"'`);
+// ---- memory menu ----
+const MEM_SH = `bash "$HOME/Library/Application Support/Übersicht/widgets/panel-mem.sh"`;
+const runMem = (action) => run(`${MEM_SH} ${action}`);
+
+let __memVisible = false;
+const __setMem = (visible) => {
+  __memVisible = visible;
+  const popup = document.querySelector('[data-pi-mem]');
+  if (popup) popup.style.display = visible ? 'block' : 'none';
 };
+const __toggleMem = () => { __closeCleanup(); __setMem(!__memVisible); };
+const __closeMem = () => __setMem(false);
+
+const MemRow = ({ label, hint, action, danger }) => (
+  <div
+    onClick={(e) => { e.stopPropagation(); runMem(action); __closeMem(); }}
+    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    style={{
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+      gap: 12, padding: "6px 10px", borderRadius: 6, cursor: "pointer",
+      fontSize: 11, whiteSpace: "nowrap", color: danger ? "#ff6b6b" : "#fff",
+      borderTop: danger ? "1px solid rgba(255,255,255,0.08)" : "none", marginTop: danger ? 2 : 0,
+    }}
+  >
+    <span>{label}</span>
+    {hint && <span style={{ opacity: 0.45, fontSize: 9.5 }}>{hint}</span>}
+  </div>
+);
 
 // ---- cleanup menu ----
 const CLEAN_SH = `bash "$HOME/Library/Application Support/Übersicht/widgets/panel-cleanup.sh"`;
@@ -263,15 +293,16 @@ const __setCleanup = (visible) => {
   if (popup) popup.style.display = visible ? 'block' : 'none';
 };
 
-const __toggleCleanup = () => __setCleanup(!__cleanupVisible);
+const __toggleCleanup = () => { __closeMem(); __setCleanup(!__cleanupVisible); };
 const __closeCleanup = () => __setCleanup(false);
 
-// Close the menu on any click outside the popup. The CLR chip and the menu rows
+// Close the menus on any click outside their popups. The chips and the menu rows
 // call stopPropagation, so their own clicks never reach this listener.
 if (typeof window !== 'undefined' && !window.__piCleanupBound) {
   window.__piCleanupBound = true;
   document.addEventListener('click', () => {
     if (__cleanupVisible) __closeCleanup();
+    if (__memVisible) __closeMem();
   });
 }
 
@@ -303,7 +334,7 @@ export const render = ({ output }) => {
   const [batPct, batState, batTime] = sections[2].split("|");
   const [gpuUtil, vramUsedMb, vramAllocMb] = sections[3].split("|");
   const [diskTotal, diskUsed, diskFree, diskPurge] = sections[4].split("|").map(Number);
-  const [ramTotal, ramUsed, ramFree, ramPct, ramHog] = sections[5].split("|");
+  const [ramTotal, ramUsed, ramFree, ramPct, ramHog, memPress, swapGb] = sections[5].split("|");
   const [cpuTotal, cpuHog] = sections[6].split("|");
   const [downKbps, upKbps, netIp] = sections[7].split("|");
 
@@ -324,7 +355,15 @@ export const render = ({ output }) => {
   const hasPurgeable = diskPurge > 100 * 1e6;
 
   const ramPctNum = parseInt(ramPct, 10) || 0;
-  const ramColor = pctColor(ramPctNum);
+  // On modern macOS, memory pressure (not "% used") is the real health signal.
+  const pressNum = parseInt(memPress, 10) || 1;
+  const swapNum = parseFloat(swapGb) || 0;
+  const pressInfo = pressNum >= 4
+    ? { label: "Crítico", color: "#ff3b30" }
+    : pressNum >= 2
+      ? { label: "Atenção", color: "#ff9500" }
+      : { label: "Normal", color: "#34c759" };
+  const ramColor = pressInfo.color;
 
   const cpuPctNum = parseInt(cpuTotal, 10) || 0;
   const cpuColor = pctColor(cpuPctNum);
@@ -455,24 +494,48 @@ export const render = ({ output }) => {
               Limpar espaço
             </div>
             {hasPurgeable && <CleanRow label="Snapshots APFS" hint={`${fmtGB(diskPurge)} GB`} action="snapshots" />}
-            <CleanRow label="Caches" action="caches" />
+            <CleanRow label="Caches de apps" hint="Chrome · Cursor · Claude" action="appcaches" />
             <CleanRow label="Modelos Ollama" action="ollama" />
-            <CleanRow label="Downloads (instaladores)" action="downloads" />
+            <CleanRow label="Downloads (maiores)" action="downloads" />
             <CleanRow label="Esvaziar Lixeira" action="trash" danger />
           </div>
         </Cell>
 
         {/* RAM */}
-        <Cell label="Memory" value={`${ramPctNum}%`} accent={ramColor} action="PRG" onAction={() => purgeRam({ stopPropagation: () => {} })}>
+        <Cell label="Memory" value={pressInfo.label} accent={ramColor} action="MEM" onAction={__toggleMem}>
           <Bar pct={ramPctNum} color={ramColor} height={5} />
           <div style={{ fontSize: 10, opacity: 0.6, fontVariantNumeric: "tabular-nums" }}>
             {ramUsed} / {ramTotal} GB
           </div>
-          {ramHog && (
-            <div style={{ fontSize: 9.5, opacity: 0.5, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              top: {ramHog}
+          <div style={{ fontSize: 9.5, opacity: 0.5, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+            swap {swapNum.toFixed(1)} GB{ramHog ? ` · ${ramHog}` : ""}
+          </div>
+
+          {/* memory popup */}
+          <div
+            data-pi-mem
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: __memVisible ? "block" : "none",
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              marginTop: 6,
+              minWidth: 210,
+              padding: 4,
+              background: "rgba(28,28,34,0.98)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 8,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+              zIndex: 99999,
+            }}
+          >
+            <div style={{ fontSize: 9, opacity: 0.4, textTransform: "uppercase", letterSpacing: 0.5, padding: "4px 10px 2px" }}>
+              Memória · {pressInfo.label}
             </div>
-          )}
+            <MemRow label="Apps que mais usam memória" hint="fechar app" action="hogs" />
+            <MemRow label="Purge (efeito limitado)" hint="admin" action="purge" />
+          </div>
         </Cell>
 
         {/* CPU */}
