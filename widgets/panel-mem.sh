@@ -60,7 +60,18 @@ case "${1:-}" in
     done
     AS_LIST=${AS_LIST%,}
 
-    CHOICE=$(osascript -e "choose from list {$AS_LIST} with prompt \"Apps que mais usam memória — fechar qual?\"" 2>/dev/null)
+    # Context line so the list reads as "the closeable subset", not the whole total.
+    PAGE=$(vm_stat | head -1 | grep -oE '[0-9]+'); PAGE=${PAGE:-16384}
+    VM=$(vm_stat)
+    total_b=$(sysctl -n hw.memsize)
+    freep=$(echo "$VM" | awk '/Pages free/{gsub(/\./,"",$3);print $3}'); freep=${freep:-0}
+    inactp=$(echo "$VM" | awk '/Pages inactive/{gsub(/\./,"",$3);print $3}'); inactp=${inactp:-0}
+    compp=$(echo "$VM" | awk '/occupied by compressor/{gsub(/\./,"",$5);print $5}'); compp=${compp:-0}
+    used_gb=$(awk -v t="$total_b" -v f="$freep" -v ia="$inactp" -v p="$PAGE" 'BEGIN{printf "%.1f",(t-(f+ia)*p)/1073741824}')
+    comp_gb=$(awk -v c="$compp" -v p="$PAGE" 'BEGIN{printf "%.1f",c*p/1073741824}')
+    PROMPT="Em uso ${used_gb} GB (${comp_gb} GB comprimida, não fechável). Apps que dá pra fechar:"
+
+    CHOICE=$(osascript -e "choose from list {$AS_LIST} with prompt \"$PROMPT\"" 2>/dev/null)
     if [ "$CHOICE" = "false" ] || [ -z "$CHOICE" ]; then
       exit 0
     fi

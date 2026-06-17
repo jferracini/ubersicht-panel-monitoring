@@ -34,7 +34,8 @@ export const command = `
   ram_free=$(echo "scale=1; ($rfree + $rinactive) * $PAGE_SIZE / 1073741824" | bc)
   ram_used=$(echo "scale=1; $ram_total - $ram_free" | bc)
   ram_pct=$(echo "scale=0; $ram_used * 100 / $ram_total" | bc)
-  ram_hog=$(ps -axo rss,comm | sort -rn | head -1 | awk '{full=""; for(i=2;i<=NF;i++) full = full (i>2?" ":"") $i; n=split(full, p, "/"); name=p[n]; if(length(name)>16) name=substr(name,1,16)"…"; printf "%s", name}')
+  # top app by memory, grouped under its .app bundle so it matches the MEM menu
+  ram_hog=$(ps -axo rss,command | awk 'NR>1{rss=$1;path=$2;for(i=3;i<=NF;i++)path=path" "$i;idx=index(path,".app/");if(idx>0){pre=substr(path,1,idx-1);m=split(pre,p,"/");nm=p[m];sum[nm]+=rss}}END{mx=0;best="";for(x in sum)if(sum[x]>mx){mx=sum[x];best=x}; if(length(best)>16)best=substr(best,1,16)"…"; printf "%s", best}')
   # memory pressure level (1=normal 2=warning 4=critical) + swap used (the metrics that actually matter on modern macOS)
   mem_press=$(sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null)
   mem_press=\${mem_press:-1}

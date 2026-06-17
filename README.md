@@ -103,6 +103,8 @@ Tap **MEM** to open the memory menu:
 | **Apps que mais usam memória** | Lists running apps grouped by app (all helper processes summed), biggest first. Pick one to quit it gracefully — the only thing that truly relieves memory pressure |
 | **Purge (efeito limitado)** | Runs macOS `purge` (asks for admin) and honestly reports how little it freed |
 
+> The app list is the **closeable subset** — it won't add up to "RAM used", because a large share of memory is compressed app data and system (wired) memory that you can't quit. Use the pressure indicator + swap to judge if memory is tight; use the list to decide what to close.
+
 ---
 
 ## Manage widgets
